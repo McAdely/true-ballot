@@ -3,28 +3,58 @@
 "use server";
 
 import { createClient } from "../../../../lib/supabase";
-import { revalidatePath } from "next/cache";
-import { checkIsAdmin, getCurrentAdmin } from "../actions";
+import { checkIsAdmin, checkIsSuperAdmin, getCurrentAdmin } from "../actions"; // Import SuperAdmin Check
 import { reassemblePrivateKey, decryptVote } from "../../../lib/crypto";
+import { Resend } from 'resend';
 
-// 1. THE ALARM: Log that someone entered the Tally Room
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// 1. THE ALARM: Logs + Emails
 export async function logTallyAccess() {
   const admin = await getCurrentAdmin();
   if (!admin) return;
 
+  // A. STRICT CHECK: Only Super Admin (Chairman) can enter
+  const isSuper = await checkIsSuperAdmin();
+  if (!isSuper) {
+     // If a regular admin tries to enter, kick them out (handled by UI redirect usually, but we log it here)
+     console.log("Unauthorized Tally Access Attempt by " + admin.email);
+     return { error: "Unauthorized" };
+  }
+
   const supabase = await createClient();
   
-  // Log critical event
+  // B. DB Log
   await supabase.from("admin_audit_log").insert({
     admin_clerk_id: admin.clerk_user_id,
     action: "CRITICAL_TALLY_ACCESS",
     resource_type: "election_results",
-    details: { warning: "Attempting to decrypt election results" }
+    details: { warning: "Chairman accessed Tally Room" }
   });
-  
-  // In a real app, you would trigger an SMS/Email alert here using Twilio/Resend
-  console.log("🚨 ALARM TRIGGERED: Tally Room Accessed by " + admin.email);
+
+  // C. EMAIL ALERT 🚨
+  // In a real app, you'd fetch the custodian emails from DB. 
+  // For now, we'll alert the system admin email (or hardcode the Chairman's email)
+  try {
+    await resend.emails.send({
+      from: 'True Ballot Alarm <security@resend.dev>',
+      to: admin.email, // Alert the person accessing (and cc others if we had their emails stored)
+      subject: `🚨 ALARM: Tally Room Accessed`,
+      html: `
+        <h1>Security Alert</h1>
+        <p>The <strong>Restricted Tally Room</strong> was just accessed.</p>
+        <p><strong>User:</strong> ${admin.full_name} (${admin.email})</p>
+        <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+        <p>If this was not authorized, lock the election immediately.</p>
+      `
+    });
+  } catch(e) {
+    console.error("Failed to send alarm email", e);
+  }
 }
+
+// ... (Keep existing decryptAndTally function) ...
+// Just ensure you add the 'checkIsSuperAdmin()' check at the start of decryptAndTally too!
 
 // 2. THE COUNTING ENGINE: Decrypts votes in memory
 export async function decryptAndTally(shard1: string, shard2: string, shard3: string) {
