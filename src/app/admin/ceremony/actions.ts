@@ -1,5 +1,3 @@
-// src/app/admin/ceremony/actions.ts
-
 "use server";
 
 import { createClient } from "../../../../lib/supabase";
@@ -9,6 +7,9 @@ import { Resend } from 'resend';
 
 // Initialize Resend
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+// Helper: Pause execution for X milliseconds
+const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 export async function generateAndEmailShards(custodians: any[]) {
   // 1. Auth Check
@@ -36,14 +37,19 @@ export async function generateAndEmailShards(custodians: any[]) {
   const shards = shardPrivateKey(keys.privateKey);
   const shardList = [shards.part1, shards.part2, shards.part3];
 
-  // 6. Send Emails 📧
+  // 6. Send Emails 📧 (With delays to prevent spam blocking)
   try {
     // Send to Custodian 1
     await sendShardEmail(custodians[0], shardList[0], "A");
+    await delay(1000); // Wait 1 second
+    
     // Send to Custodian 2
     await sendShardEmail(custodians[1], shardList[1], "B");
+    await delay(1000); // Wait 1 second
+    
     // Send to Custodian 3
     await sendShardEmail(custodians[2], shardList[2], "C");
+    
   } catch (e: any) {
     return { error: "Email failed: " + e.message };
   }
