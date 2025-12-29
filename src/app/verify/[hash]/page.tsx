@@ -1,12 +1,13 @@
 import { createClient } from "../../../../lib/supabase";
-import { CheckCircle2, XCircle, Clock, FileText, Fingerprint } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, FileText, Fingerprint, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 
 export default async function VerifyResultPage({ params }: { params: { hash: string } }) {
   const supabase = await createClient();
+  const cleanHash = params.hash.trim(); // Ensure no hidden spaces
 
-  // 1. Fetch the Receipt
-  const { data: receipt } = await supabase
+  // 1. Fetch the Receipt with ERROR reporting
+  const { data: receipt, error } = await supabase
     .from("vote_receipts")
     .select(`
       created_at,
@@ -14,31 +15,43 @@ export default async function VerifyResultPage({ params }: { params: { hash: str
       positions (title),
       candidates (name) 
     `)
-    .eq("receipt_hash", params.hash)
+    .eq("receipt_hash", cleanHash)
     .single();
 
-  if (!receipt) {
+  // ERROR STATE
+  if (error || !receipt) {
+    console.error("Verification Error:", error); // Check server logs
+
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border-l-4 border-red-500">
           <div className="flex items-center gap-3 mb-4 text-red-600">
              <XCircle className="w-8 h-8" />
-             <h1 className="text-2xl font-bold">Invalid Receipt</h1>
+             <h1 className="text-2xl font-bold">Verification Failed</h1>
           </div>
           <p className="text-slate-600 mb-6">
-            This hash could not be found in the official election database. It may be fake or incorrect.
+            We could not verify this hash.
           </p>
+
+          {/* DEBUG BOX: Shows us exactly what went wrong */}
+          <div className="bg-slate-100 p-3 rounded-lg border border-slate-200 mb-6 text-xs font-mono text-slate-700 break-all">
+             <strong>Debug Info:</strong><br/>
+             Hash: {cleanHash}<br/>
+             Error: {error ? error.message : "Row not found (Check RLS)"}<br/>
+             Code: {error?.code}
+          </div>
+
           <Link href="/verify" className="text-red-600 font-bold hover:underline">Try Another Hash</Link>
         </div>
       </div>
     );
   }
 
-  // HELPER: Safely extract title/name from the arrays Supabase returns
+  // SUCCESS STATE
   // @ts-ignore
-  const positionTitle = receipt.positions?.[0]?.title || receipt.positions?.title || "Unknown Position";
+  const positionTitle = receipt.positions?.title || receipt.positions?.[0]?.title || "Unknown Position";
   // @ts-ignore
-  const candidateName = receipt.candidates?.[0]?.name || receipt.candidates?.name || "Encrypted Value";
+  const candidateName = receipt.candidates?.name || receipt.candidates?.[0]?.name || "Encrypted Value";
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -46,7 +59,7 @@ export default async function VerifyResultPage({ params }: { params: { hash: str
         
         {/* Success Header */}
         <div className="bg-emerald-600 p-8 text-center">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm animate-bounce">
             <CheckCircle2 className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-white">Valid Official Record</h1>
