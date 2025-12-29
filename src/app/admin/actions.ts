@@ -5,6 +5,7 @@
 import { createClient } from "../../../lib/supabase";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { triggerSecurityAlert } from "../../lib/security";
 
 // ============================================
 // 1. AUTHENTICATION CHECKS
@@ -17,6 +18,13 @@ export async function checkIsAdmin(): Promise<boolean> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc('is_admin', { user_clerk_id: userId });
 
+  if (!data) {
+    // 🚨 TRIGGER ALERT! User logged in but tried to access Admin area
+    await triggerSecurityAlert("/admin", "LOW");
+    return false;
+  }
+  return true;
+
   if (error) {
     console.error("Admin Check Error:", error);
     return false;
@@ -25,11 +33,21 @@ export async function checkIsAdmin(): Promise<boolean> {
 }
 
 export async function checkIsSuperAdmin(): Promise<boolean> {
-  const { userId } = await auth();
-  if (!userId) return false;
+
+const isAdmin = await checkIsAdmin();
+  if (!isAdmin) return false; // Alert already triggered above
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc('is_super_admin', { user_clerk_id: userId });
+  const { userId } = await auth();
+  
+  const { data, error } = await supabase.from("admin_users").select("role").eq("clerk_user_id", userId).single();
+  
+  if (data?.role !== 'super_admin') {
+     // 🚨 TRIGGER ALERT! Regular Admin tried to access Super Admin area
+     await triggerSecurityAlert("/admin/super-restricted", "HIGH");
+     return false;
+  }
+  return true;
 
   if (error) return false;
   return !!data;

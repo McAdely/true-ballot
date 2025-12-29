@@ -5,6 +5,8 @@ import Link from "next/link";
 export default async function VerifyResultPage({ params }: { params: { hash: string } }) {
   const supabase = await createClient();
 
+  const cleanHash = params.hash.trim();
+
   // 1. Fetch the Receipt
   const { data: receipt } = await supabase
     .from("vote_receipts")
@@ -14,7 +16,7 @@ export default async function VerifyResultPage({ params }: { params: { hash: str
       positions (title),
       candidates (name) 
     `)
-    .eq("receipt_hash", params.hash)
+    .eq("receipt_hash", cleanHash)
     .single();
 
   if (!receipt) {
