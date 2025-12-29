@@ -1,15 +1,15 @@
-// src/app/success/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
-import { CheckCircle, ShieldCheck, Download, ArrowLeft, ExternalLink } from "lucide-react";
+import { ShieldCheck, Download, ArrowLeft, ExternalLink, Loader2 } from "lucide-react"; // Added Loader2
 import { QRCodeSVG } from "qrcode.react";
 import jsPDF from "jspdf";
 import Link from "next/link";
 
-export default function SuccessPage() {
+// 1. Rename your main logic to "SuccessContent"
+function SuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const hash = searchParams.get("hash");
@@ -19,10 +19,7 @@ export default function SuccessPage() {
 
   useEffect(() => {
     setMounted(true);
-    if (!hash) {
-      // If no hash is provided, redirect back to home or vote page
-      // router.push("/vote"); // Optional: uncomment if you want strict redirect
-    } else {
+    if (hash) {
       // Only trigger confetti if we have a valid receipt
       const duration = 3 * 1000;
       const animationEnd = Date.now() + duration;
@@ -40,7 +37,6 @@ export default function SuccessPage() {
     }
   }, [hash, router]);
 
-  // PDF Generation Function
   const downloadPDF = () => {
     if (!hash) return;
     
@@ -68,8 +64,8 @@ export default function SuccessPage() {
     doc.setFont("courier", "normal");
     doc.setFontSize(10);
     doc.setFillColor(241, 245, 249); // Slate 100
-    doc.rect(15, 65, pageWidth - 30, 20, "F"); // Gray box
-    doc.text(hash, 20, 78); // The Hash itself
+    doc.rect(15, 65, pageWidth - 30, 20, "F");
+    doc.text(hash, 20, 78);
 
     // Verification Instructions
     doc.setFont("helvetica", "bold");
@@ -81,13 +77,11 @@ export default function SuccessPage() {
     doc.text("1. Scan the QR code below.", 20, 120);
     doc.text("2. Or visit the verification portal and enter your hash manually.", 20, 126);
     
-    // Info
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
     doc.text(`Timestamp: ${new Date().toLocaleString()}`, 20, 250);
     doc.text("This document serves as proof of participation.", 20, 256);
 
-    // Save
     doc.save(`vote-receipt-${hash.slice(0, 8)}.pdf`);
   };
 
@@ -108,7 +102,6 @@ export default function SuccessPage() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="bg-white max-w-lg w-full rounded-3xl shadow-xl p-8 border border-slate-100 relative overflow-hidden">
         
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
             <ShieldCheck className="w-10 h-10 text-emerald-600" />
@@ -119,7 +112,6 @@ export default function SuccessPage() {
           </p>
         </div>
 
-        {/* Receipt Card */}
         <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-6 mb-8">
           <div className="flex justify-between items-start mb-4">
              <div>
@@ -131,7 +123,6 @@ export default function SuccessPage() {
           </div>
 
           <div className="flex flex-col items-center justify-center bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-            {/* QR Code */}
             <QRCodeSVG 
               value={verifyUrl} 
               size={120}
@@ -142,7 +133,6 @@ export default function SuccessPage() {
           </div>
         </div>
 
-        {/* Actions */}
         <div className="space-y-3">
           <button 
             onClick={downloadPDF}
@@ -169,5 +159,18 @@ export default function SuccessPage() {
 
       </div>
     </div>
+  );
+}
+
+// 2. Export the Wrapper Component that contains the Suspense Boundary
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="w-10 h-10 text-emerald-600 animate-spin" />
+      </div>
+    }>
+      <SuccessContent />
+    </Suspense>
   );
 }

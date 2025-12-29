@@ -12,15 +12,20 @@ export default async function ReceiptsPage() {
   const supabase = await createClient();
 
   // Fetch receipts with related position and candidate details
-  const { data: receipts } = await supabase
+  const { data: receipts, error } = await supabase
     .from("vote_receipts")
     .select(`
-      *,
+      receipt_hash,
+        created_at,
       positions (title),
       candidates (name, photo_url)
     `)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching receipts:", error);
+    }
 
   return (
     <div className="min-h-screen bg-slate-50 p-8">

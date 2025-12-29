@@ -5,7 +5,10 @@ import { checkIsSuperAdmin } from "../actions";
 import { redirect } from "next/navigation";
 import { Shield, UserPlus, Trash2, ArrowLeft, Mail, Fingerprint } from "lucide-react";
 import Link from "next/link";
-import { addAdmin, removeAdmin } from "./actions"; // Import our new actions
+import { addAdmin, removeAdmin } from "./actions";
+import { resetElectionForNewSession } from "./actions"; // Import the new action
+import { AlertTriangle } from "lucide-react";
+import ResetButton from "./ResetButton";
 
 export default async function ManageAdminsPage() {
   // 🔒 Security Gate
@@ -133,7 +136,32 @@ export default async function ManageAdminsPage() {
                     </form>
                   </div>
                 ))}
+</div>
 
+              {/* DANGER ZONE - Move this OUT of the map loop, keep inside the white card */}
+              <div className="bg-red-50/50 border-t border-red-100 p-8 mt-4">
+                <div className="flex items-center gap-3 mb-4">
+                   <div className="bg-red-100 p-2 rounded-lg">
+                      <AlertTriangle className="text-red-600 w-6 h-6" />
+                   </div>
+                   <div>
+                      <h3 className="text-lg font-bold text-red-900">Danger Zone</h3>
+                      <p className="text-red-600 text-sm">Actions here are irreversible.</p>
+                   </div>
+                </div>
+
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white border border-red-200 p-6 rounded-xl">
+                    <div>
+                        <h4 className="font-bold text-slate-900">Start New Academic Session</h4>
+                        <p className="text-slate-500 text-sm mt-1 max-w-xl">
+                        This will <strong className="text-red-600">permanently delete</strong> all candidates, votes, and receipts. 
+                        It resets the system to "Setup Mode" for the next year. Admin accounts are preserved.
+                        </p>
+                    </div>
+                    
+                    {/* USE THE CLIENT COMPONENT HERE */}
+                    <ResetButton />
+                </div>
                 {(!admins || admins.length === 0) && (
                   <div className="p-8 text-center text-slate-400">
                     No admins found.

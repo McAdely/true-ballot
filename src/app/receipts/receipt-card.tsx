@@ -1,3 +1,5 @@
+// src/app/receipts/receipt-card.tsx
+
 "use client";
 
 import { Download, QrCode, CheckCircle2 } from "lucide-react";
@@ -40,14 +42,14 @@ export default function ReceiptCard({ receipt }: any) {
       doc.text("POSITION", 30, 55);
       doc.setFontSize(14);
       doc.setTextColor(0);
-      doc.text(receipt.positions.title, 30, 62);
+      doc.text(receipt.positions?.title || "Unknown Position", 30, 62);
 
       doc.setFontSize(10);
       doc.setTextColor(100);
       doc.text("CANDIDATE SELECTION", 30, 80);
       doc.setFontSize(14);
       doc.setTextColor(0);
-      doc.text(receipt.candidates.name, 30, 87);
+      doc.text(receipt.candidates?.name || "Unknown" , 30, 87);
 
       doc.setFontSize(10);
       doc.setTextColor(100);
@@ -102,7 +104,7 @@ export default function ReceiptCard({ receipt }: any) {
             </span>
           </div>
           <h3 className="text-xl font-bold text-slate-900 mb-1">
-            Voted for {receipt.candidates.name}
+            Voted for {receipt.candidates?.name || "Unknown Candidate"}
           </h3>
           <div className="flex items-center gap-2 mt-2">
              <div className="bg-slate-50 border border-slate-200 rounded px-2 py-1 font-mono text-[10px] text-slate-500 truncate max-w-[200px] md:max-w-[300px]">

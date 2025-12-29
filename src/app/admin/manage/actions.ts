@@ -64,3 +64,36 @@ export async function removeAdmin(adminId: number) {
   revalidatePath("/admin/manage");
   return { success: true };
 }
+// 3. RESET ELECTION FOR NEW SESSION
+export async function resetElectionForNewSession() {
+  // 1. Double Security Check
+  const isSuper = await checkIsSuperAdmin();
+  if (!isSuper) return { error: "Unauthorized" };
+
+  const supabase = await createClient();
+
+  // 2. The "Nuclear" Option - Wipes transactional data but KEEPS Admins
+  // We use multiple calls because RLS might block a single huge transaction depending on setup
+  
+  // A. Wipe Votes & Receipts
+  const { error: voteError } = await supabase.from("votes").delete().neq("id", "00000000-0000-0000-0000-000000000000"); // Delete all
+  const { error: receiptError } = await supabase.from("vote_receipts").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  
+  // B. Wipe Candidates & Positions (Optional: You might want to keep positions, but usually they change)
+  const { error: candError } = await supabase.from("candidates").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  const { error: posError } = await supabase.from("positions").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+
+  // C. Reset Status
+  const { error: statusError } = await supabase
+    .from("election_settings")
+    .update({ status: "not_started" })
+    .eq("id", 1);
+
+  if (voteError || receiptError || candError || posError || statusError) {
+    console.error("Reset Error", { voteError, receiptError, candError });
+    return { error: "Partial failure during reset. Check database logs." };
+  }
+
+  revalidatePath("/");
+  return { success: true };
+}

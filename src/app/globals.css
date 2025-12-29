@@ -2,27 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 1. Reset defaults so Tailwind controls the background */
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  /* Optional: Set a safe default background if Tailwind classes fail to load */
+  background-color: #ffffff;
+  color: #0f172a; /* Slate 900 */
 }
 
+/* 2. Remove the Next.js default gradient that forces light mode */
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  @apply bg-slate-50 text-slate-900; /* Default app base style */
+  /* No more linear-gradient here! */
 }
 
+/* 3. Keep your custom animations */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-4px); }
   75% { transform: translateX(4px); }
 }
+
 .animate-shake {
   animation: shake 0.2s ease-in-out 0s 2;
+}
+
+/* 4. Scrollbar polish (Optional but nice) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-slate-100;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-full hover:bg-slate-400;
 }
