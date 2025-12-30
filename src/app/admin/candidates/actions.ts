@@ -3,13 +3,13 @@
 "use server";
 
 import { createClient } from "../../../../lib/supabase";
-import { checkIsSuperAdmin } from "../actions";
+import { checkIsAdmin } from "../actions";
 import { revalidatePath } from "next/cache";
 
 // 1. CREATE CANDIDATE (With Image Upload)
 export async function createCandidate(formData: FormData) {
-  const isSuper = await checkIsSuperAdmin();
-  if (!isSuper) return { error: "Unauthorized" };
+  const isAdmin = await checkIsAdmin();
+  if (!isAdmin) return { error: "Unauthorized" };
 
   const name = formData.get("name") as string;
   const positionId = formData.get("position_id") as string;
@@ -64,8 +64,8 @@ export async function createCandidate(formData: FormData) {
 
 // UPDATE CANDIDATE
 export async function updateCandidate(formData: FormData) {
-  const isSuper = await checkIsSuperAdmin();
-  if (!isSuper) return { error: "Unauthorized" };
+  const isAdmin = await checkIsAdmin();
+  if (!isAdmin) return { error: "Unauthorized" };
 
   const id = formData.get("id") as string;
   const name = formData.get("name") as string;
@@ -131,8 +131,8 @@ export async function updateCandidate(formData: FormData) {
 
 // DELETE CANDIDATE
 export async function deleteCandidate(candidateId: string) {
-  const isSuper = await checkIsSuperAdmin();
-  if (!isSuper) return { error: "Unauthorized" };
+  const isAdmin = await checkIsAdmin();
+  if (!isAdmin) return { error: "Unauthorized" };
 
   const supabase = await createClient();
 

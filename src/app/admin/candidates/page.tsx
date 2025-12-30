@@ -1,15 +1,16 @@
+// src/app/admin/candidates/page.tsx
+
 import { createClient } from "../../../../lib/supabase";
-import { checkIsSuperAdmin } from "../actions";
+import { checkIsAdmin } from "../actions";
 import { redirect } from "next/navigation";
 import { Users, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import CandidateRow from "./CandidateRow";
-// 1. IMPORT THE FORM
 import AddCandidateForm from "./AddCandidateForm"; 
 
 export default async function ManageCandidatesPage() {
-  const isSuper = await checkIsSuperAdmin();
-  if (!isSuper) redirect("/admin/dashboard");
+  const isAdmin = await checkIsAdmin();
+  if (!isAdmin) redirect("/admin/dashboard");
 
   const supabase = await createClient();
 

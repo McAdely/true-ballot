@@ -7,6 +7,7 @@ import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { triggerSecurityAlert } from "../../lib/security";
 
+
 // ============================================
 // 1. AUTHENTICATION CHECKS
 // ============================================
@@ -84,6 +85,7 @@ export async function addPosition(formData: FormData) {
   if (error) return { error: error.message };
   
   revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/candidates");
   revalidatePath("/vote");
   return { success: true };
 }
@@ -113,8 +115,8 @@ export async function addCandidate(formData: FormData) {
 }
 
 export async function updateElectionStatus(status: 'not_started' | 'open' | 'closed') {
-  const isAdmin = await checkIsAdmin();
-  if (!isAdmin) return { error: "Unauthorized: You are not an admin." };
+  const isSuper = await checkIsSuperAdmin();
+  if (!isSuper) return { error: "Unauthorized: You are not a super admin." };
 
   const supabase = await createClient();
   const { error } = await supabase
