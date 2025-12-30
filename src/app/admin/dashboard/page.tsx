@@ -141,23 +141,28 @@ export default async function AdminDashboard() {
                 <div className="text-slate-500 text-sm font-semibold uppercase tracking-wide">Unique Voters</div>
                 <div className="text-4xl font-black text-slate-900 mt-2">{totalVoters}</div>
             </div>
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <div className="text-slate-500 text-sm font-semibold uppercase tracking-wide">Leading Position</div>
-                <div className="text-lg font-bold text-slate-900 mt-2 truncate">
-                    {/* Simple logic to show top result if available */}
-                    {status === 'closed' && results[0] ? results[0].candidate_name : "Waiting for results..."}
-                </div>
-            </div>
          </div>
       )}
 
+
       {/* STATUS CONTROLS */}
-      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-8">
-        <h3 className="font-bold text-lg text-slate-900 mb-4">Election Controls</h3>
-        <div className="flex gap-2 flex-wrap">
+      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-8 relative overflow-hidden">
+        
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-bold text-lg text-slate-900">Election Controls</h3>
+          {!isSuperAdmin && (
+            <span className="text-xs font-bold bg-slate-100 text-slate-500 px-2 py-1 rounded border border-slate-200">
+              View Only
+            </span>
+          )}
+        </div>
+
+        {/* 🔒 IF NOT SUPER ADMIN: Show Overlay or Disable */}
+        <div className={`flex gap-2 flex-wrap transition-opacity ${!isSuperAdmin ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+          
           <form action={async () => { "use server"; await updateElectionStatus('not_started'); }}>
             <button 
-              disabled={status === 'not_started'} 
+              disabled={status === 'not_started' || !isSuperAdmin} 
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
                 status === 'not_started' ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'hover:bg-slate-50 text-slate-700 border border-slate-200'
               }`}
@@ -168,7 +173,7 @@ export default async function AdminDashboard() {
 
           <form action={async () => { "use server"; await updateElectionStatus('open'); }}>
             <button 
-              disabled={status === 'open'} 
+              disabled={status === 'open' || !isSuperAdmin} 
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
                 status === 'open' ? 'bg-green-100 text-green-700 border border-green-200 cursor-not-allowed' : 'bg-primary-600 text-white hover:bg-primary-700 shadow-md shadow-primary-500/20'
               }`}
@@ -179,7 +184,7 @@ export default async function AdminDashboard() {
 
           <form action={async () => { "use server"; await updateElectionStatus('closed'); }}>
             <button 
-              disabled={status === 'closed'} 
+              disabled={status === 'closed' || !isSuperAdmin} 
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
                 status === 'closed' ? 'bg-red-100 text-red-700 border border-red-200 cursor-not-allowed' : 'hover:bg-red-50 text-red-600 border border-red-200'
               }`}
@@ -188,6 +193,16 @@ export default async function AdminDashboard() {
             </button>
           </form>
         </div>
+
+        {!isSuperAdmin && (
+          <div className="mt-4 p-3 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center gap-3">
+            <Shield className="text-indigo-600 w-5 h-5 flex-shrink-0" />
+            <p className="text-sm text-indigo-900">
+              <strong>Restricted Access:</strong> Only the Super Admin can start or stop the election.
+            </p>
+          </div>
+        )}
+
         
         {status === 'open' && (
              <p className="text-sm text-slate-500 mt-3 flex items-center gap-2">

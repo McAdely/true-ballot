@@ -5,46 +5,68 @@
 import { createClient } from "../../../../lib/supabase";
 import { checkIsSuperAdmin } from "../actions";
 import { revalidatePath } from "next/cache";
+import { createClerkClient } from "@clerk/nextjs/server"; // Import Clerk Backend
 
-// 1. ADD NEW ADMIN
+// Initialize Clerk Backend Client
+const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+
+// 1. ADD NEW ADMIN (By Email)
 export async function addAdmin(formData: FormData) {
   const isSuper = await checkIsSuperAdmin();
   if (!isSuper) return { error: "Unauthorized: Super Admin access required." };
 
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
-  const clerkId = formData.get("clerk_id") as string;
-  const role = formData.get("role") as string; // 'admin' or 'super_admin'
+  // const clerkId = formData.get("clerk_id") as string; // REMOVED
+  const role = formData.get("role") as string;
 
-  if (!name || !email || !clerkId) {
-    return { error: "All fields are required." };
+  if (!name || !email) {
+    return { error: "Name and Email are required." };
   }
 
-  const supabase = await createClient();
+  try {
+    // 🔍 LOOKUP USER BY EMAIL IN CLERK
+    const userList = await clerk.users.getUserList({
+      emailAddress: [email],
+    });
 
-  // Check if already exists
-  const { data: existing } = await supabase
-    .from("admin_users")
-    .select("id")
-    .eq("clerk_user_id", clerkId)
-    .single();
+    if (userList.data.length === 0) {
+      return { error: "User not found! Ask them to create a student account first." };
+    }
 
-  if (existing) {
-    return { error: "This user is already an admin." };
+    // Get the User ID from the result
+    const clerkId = userList.data[0].id;
+
+    const supabase = await createClient();
+
+    // Check if already exists in Supabase
+    const { data: existing } = await supabase
+      .from("admin_users")
+      .select("id")
+      .eq("clerk_user_id", clerkId)
+      .single();
+
+    if (existing) {
+      return { error: "This user is already an admin." };
+    }
+
+    const { error } = await supabase.from("admin_users").insert({
+      full_name: name,
+      email: email,
+      clerk_user_id: clerkId, // Use the ID found via API
+      role: role || 'admin',
+      is_active: true
+    });
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/admin/manage");
+    return { success: true };
+
+  } catch (err) {
+    console.error("Clerk Lookup Error:", err);
+    return { error: "Failed to verify email with Clerk. Check API keys." };
   }
-
-  const { error } = await supabase.from("admin_users").insert({
-    full_name: name,
-    email: email,
-    clerk_user_id: clerkId,
-    role: role || 'admin',
-    is_active: true
-  });
-
-  if (error) return { error: error.message };
-
-  revalidatePath("/admin/manage");
-  return { success: true };
 }
 
 // 2. REMOVE ADMIN
@@ -82,6 +104,8 @@ export async function resetElectionForNewSession() {
   // B. Wipe Candidates & Positions (Optional: You might want to keep positions, but usually they change)
   const { error: candError } = await supabase.from("candidates").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   const { error: posError } = await supabase.from("positions").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+
+  const {error: adminError} = await supabase.from("admin_users").delete().eq("role", "admin");
 
   // C. Reset Status
   const { error: statusError } = await supabase

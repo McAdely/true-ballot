@@ -67,13 +67,7 @@ export default async function ManageAdminsPage() {
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email Address</label>
                   <input name="email" type="email" placeholder="john@university.edu" required className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-purple-500 outline-none" />
                 </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Clerk User ID</label>
-                  <input name="clerk_id" placeholder="user_2q..." required className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-mono focus:ring-2 focus:ring-purple-500 outline-none" />
-                  <p className="text-[10px] text-slate-400 mt-1">Copy this from the Clerk Dashboard.</p>
-                </div>
-
+               
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Role</label>
                   <select name="role" className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-purple-500 outline-none">
