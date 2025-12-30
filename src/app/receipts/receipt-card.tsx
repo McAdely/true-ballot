@@ -2,10 +2,11 @@
 
 "use client";
 
-import { Download, QrCode, CheckCircle2 } from "lucide-react";
+import { Download, ExternalLink } from "lucide-react"; // Import ExternalLink
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
 import { useState } from "react";
+import Link from "next/link"; // Import Link
 
 export default function ReceiptCard({ receipt }: any) {
   const [downloading, setDownloading] = useState(false);
@@ -15,12 +16,9 @@ export default function ReceiptCard({ receipt }: any) {
     try {
       const doc = new jsPDF();
       
-      // 1. Generate QR Code Data URL
-      // (Later we will point this to the live verify page)
       const verifyUrl = `${window.location.origin}/verify/${receipt.receipt_hash}`;
       const qrDataUrl = await QRCode.toDataURL(verifyUrl);
 
-      // 2. Build PDF Document
       doc.setFont("helvetica", "bold");
       doc.setFontSize(22);
       doc.text("Official Vote Receipt", 105, 20, { align: "center" });
@@ -32,7 +30,6 @@ export default function ReceiptCard({ receipt }: any) {
       doc.setFont("helvetica", "normal");
       doc.text("University Election System", 105, 32, { align: "center" });
 
-      // Transaction Details Box
       doc.setDrawColor(200);
       doc.setFillColor(245, 247, 250);
       doc.rect(20, 40, 170, 90, "F");
@@ -58,29 +55,24 @@ export default function ReceiptCard({ receipt }: any) {
       doc.setTextColor(0);
       doc.text(new Date(receipt.created_at).toLocaleString(), 30, 112);
 
-      // The Hash
       doc.setFontSize(10);
       doc.setTextColor(100);
       doc.text("CRYPTOGRAPHIC HASH", 30, 145);
       doc.setFont("courier", "normal");
       doc.setFontSize(9);
       doc.setTextColor(0);
-      // Split hash if too long
       const splitHash = doc.splitTextToSize(receipt.receipt_hash, 150);
       doc.text(splitHash, 30, 152);
 
-      // Add QR Code
       doc.addImage(qrDataUrl, "PNG", 140, 50, 40, 40);
       doc.setFontSize(8);
       doc.text("Scan to Verify", 160, 95, { align: "center" });
 
-      // Footer
       doc.setFont("helvetica", "italic");
       doc.setFontSize(10);
       doc.setTextColor(150);
       doc.text("This receipt is a permanent record of your vote.", 105, 280, { align: "center" });
 
-      // Save
       doc.save(`vote-receipt-${receipt.positions.title.replace(/\s+/g, '-')}.pdf`);
     } catch (e) {
       console.error(e);
@@ -115,6 +107,15 @@ export default function ReceiptCard({ receipt }: any) {
 
         {/* Right Actions */}
         <div className="flex items-center gap-3">
+         
+          <Link 
+            href={`/verify/${receipt.receipt_hash}`}
+            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold text-sm hover:bg-slate-50 transition active:scale-95"
+          >
+            <ExternalLink size={16} /> Verify
+          </Link>
+
+          {/* Download Button */}
           <button 
             onClick={generatePDF}
             disabled={downloading}
@@ -124,7 +125,7 @@ export default function ReceiptCard({ receipt }: any) {
                "Generating..."
             ) : (
                <>
-                 <Download size={16} /> Download Receipt
+                 <Download size={16} /> Download
                </>
             )}
           </button>

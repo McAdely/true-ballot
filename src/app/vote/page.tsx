@@ -1,3 +1,5 @@
+// src/app/vote/page.tsx
+
 import { createClient } from "../../../lib/supabase";
 import { redirect } from "next/navigation";
 import BallotCard from "../../components/BallotCard";
