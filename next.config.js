@@ -4,14 +4,14 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**.supabase.co', // Allow Supabase images
+        hostname: '**.supabase.co',
       },
       {
         protocol: 'https',
-        hostname: 'img.clerk.com', // Allow Clerk avatar images
+        hostname: 'img.clerk.com',
       },
     ],
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;
