@@ -1,3 +1,5 @@
+// src/app/admin/candidates/CandidateRow.tsx
+
 "use client";
 
 import { useState, useRef } from "react"; // Import useRef
