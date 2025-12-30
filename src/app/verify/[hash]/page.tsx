@@ -1,3 +1,5 @@
+// src/app/verify/[hash]/page.tsx
+
 import { createClient } from "../../../../lib/supabase";
 import { CheckCircle2, XCircle, Clock, FileText, Fingerprint, ShieldAlert } from "lucide-react";
 import Link from "next/link";
